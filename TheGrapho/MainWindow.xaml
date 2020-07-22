@@ -6,19 +6,25 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:theGrapho="clr-namespace:TheGrapho"
+        xmlns:local="clr-namespace:TheGrapho"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        <Menu>
+    <Window.Resources>
+        <local:TemplateSelector x:Key="TemplateSelector"/>
+        <ContextMenu x:Key="RightClickMenu">
+            <MenuItem Header="Add Node" Click="MenuItem_Click"/>
+        </ContextMenu>
+    </Window.Resources>
+    <DockPanel LastChildFill="True">
+        <Menu DockPanel.Dock="Top">
             <MenuItem Header="File">
                 <MenuItem Header="New"></MenuItem>
-                <MenuItem Header="Open"></MenuItem>
+                <MenuItem Header="Open" Click="LoadFile"></MenuItem>
                 <MenuItem Header="Save"></MenuItem>
             </MenuItem>
         </Menu>
         <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" CanContentScroll="True">
-            <ItemsControl ItemsSource="{Binding Items}" ItemTemplateSelector="{Binding TemplateSelector}">
+            <ItemsControl ItemsSource="{Binding Items}" ItemTemplateSelector="{StaticResource TemplateSelector}" Name="MainItemsControl">
                 <ItemsControl.ItemContainerStyle>
                     <Style>
                         <Setter Property="Canvas.Left" Value="{Binding X, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
@@ -28,18 +34,36 @@
                 <!--ItemContainerStyle="{Binding Style}"-->
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <Canvas></Canvas>
+                        <local:NewCanvasPanel Background="Transparent">
+                            <Canvas.InputBindings>
+                                <MouseBinding Gesture="RightClick" Command="{Binding CanvasOpenMenu}"/>
+                            </Canvas.InputBindings>
+                        </local:NewCanvasPanel>
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.Resources>
-                    <DataTemplate DataType="Node" x:Name="NodeTemplate">
-                        <theGrapho:NodeControl/>
+                    <DataTemplate DataType="{x:Type local:Node}" x:Name="NodeTemplate">
+                        <local:NodeControl>
+                            <local:NodeControl.Template>
+                                <ControlTemplate>
+                                    <Border BorderThickness="2" Padding="0" Margin="0" BorderBrush="Black">
+                                        <Label Content="{Binding Name}" />
+                                    </Border>
+                                </ControlTemplate>
+                            </local:NodeControl.Template>
+                        </local:NodeControl>
                     </DataTemplate>
-                    <DataTemplate DataType="Edge" x:Name="EdgeTemplate">
-                        <theGrapho:EdgeControl/>
+                    <DataTemplate DataType="{x:Type local:Edge}" x:Name="EdgeTemplate">
+                        <local:EdgeControl>
+                            <local:EdgeControl.Template>
+                                <ControlTemplate>
+                                    <Path Data="{Binding MainPath}" Stroke="Black"/>
+                                </ControlTemplate>
+                            </local:EdgeControl.Template>
+                        </local:EdgeControl>
                     </DataTemplate>
                 </ItemsControl.Resources>
             </ItemsControl>
         </ScrollViewer>
-    </Grid>
+    </DockPanel>
 </Window>

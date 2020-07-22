@@ -19,14 +19,22 @@ using System.Windows.Shapes;
 
 namespace TheGrapho
 {
-    class Node : BaseItem
+    public class Node : BaseItem
     {
+        static int id = 0;
         public static readonly DependencyProperty NameProperty;
+        public Size Size { get; set; }
         string Name { get { return GetValue(NameProperty).ToString(); } set { SetValue(NameProperty, value); } }
 
-        Node() 
+        public Node(string Name) 
         {
-            
+            this.Name = Name;
+            id++;
+        }
+        public Node(Point position) : this($"Node{id}") 
+        {
+            X = position.X;
+            Y = position.Y;
         }
         static Node()
         {

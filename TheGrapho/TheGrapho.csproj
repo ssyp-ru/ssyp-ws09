@@ -8,4 +8,8 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\TheGrapho.Parser.SimpleModel\TheGrapho.Parser.SimpleModel.csproj" />
+  </ItemGroup>
+
 </Project>

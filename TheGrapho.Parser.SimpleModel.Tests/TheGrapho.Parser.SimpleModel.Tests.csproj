@@ -1,0 +1,23 @@
+﻿<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Sdk Name="Microsoft.Build.CentralPackageVersions" />
+
+    <PropertyGroup>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="nunit" />
+        <PackageReference Include="NUnit3TestAdapter" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\TheGrapho.Parser.SimpleModel\TheGrapho.Parser.SimpleModel.csproj" />
+      <ProjectReference Include="..\TheGrapho.Parser\TheGrapho.Parser.csproj" />
+    </ItemGroup>
+
+</Project>

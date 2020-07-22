@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -17,18 +18,54 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
+
 namespace TheGrapho
 {
-    class Edge : BaseItem
+    public class Edge : BaseItem
     {
-        DependencyProperty _;
+        public static readonly DependencyProperty PathProperty = DependencyProperty.Register(
+            "MainPath",
+            typeof(PathGeometry),
+            typeof(Edge));
         Node Source, Target;
         bool IsDirect;
-        Edge(Node source, Node target, bool isDirect)
+        PathGeometry Path { get { return (PathGeometry)GetValue(PathProperty); } set { SetValue(PathProperty, value); } }
+        public Edge(Node source, Node target, bool isDirect)
         {
             Source = source;
             Target = target;
             IsDirect = isDirect;
+            Path = new PathGeometry();  // TODO: Move this to method
+            DrawLine();
+        }
+        public void DrawLine()
+        {
+            // TODO: Add arrows
+            var figure = new PathFigure();
+            var (start_point, end_point) = FindOptimalCords();
+            figure.Segments.Add(new LineSegment(start_point, true));
+            figure.StartPoint = end_point;
+            figure.IsClosed = true;
+            Path.Figures.Add(figure);
+        }
+        private (Point, Point) FindOptimalCords()
+        {
+            double xa1 = 0, ya1 = 0, xa2 = 0, ya2 = 0;
+            if ((xa1 = Source.X) > (xa2 = Target.X + Target.Size.Width)) { }
+            else if ((xa1 = Source.X + Source.Size.Width) < (xa2 = Target.X)) { }
+            else
+            {
+                xa1 = (Source.X + Source.Size.Width) / 2;
+                xa2 = (Target.X + Target.Size.Width) / 2;
+            }
+            if ((ya1 = Source.Y) > (ya2 = Target.Y + Target.Size.Height)) { }
+            else if ((ya1 = Source.Y + Source.Size.Height) < (ya2 = Target.Y)) { }
+            else
+            {
+                ya1 = (Source.Y + Source.Size.Height) / 2;
+                ya2 = (Target.Y + Target.Size.Height) / 2;
+            }
+            return (new Point(xa1, ya1), new Point(xa2, ya2));
         }
         static Edge()
         {

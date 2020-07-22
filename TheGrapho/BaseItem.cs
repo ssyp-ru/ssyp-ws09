@@ -12,7 +12,7 @@ using System.Windows;
 
 namespace TheGrapho
 {
-    class BaseItem : DependencyObject
+    public class BaseItem : DependencyObject
     {
         public static readonly DependencyProperty YProperty = DependencyProperty.Register(
             "Y",
