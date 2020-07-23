@@ -16,31 +16,31 @@ namespace TheGrapho.Parser
     {
         public Parser([DisallowNull] IReadOnlyList<SyntaxToken> tokens)
         {
-            Tokens = tokens ?? throw new ArgumentNullException(nameof(tokens));
+            _tokens = tokens ?? throw new ArgumentNullException(nameof(tokens));
         }
 
-        [NotNull] private IReadOnlyList<SyntaxToken> Tokens { get; }
+        [NotNull] private readonly IReadOnlyList<SyntaxToken> _tokens;
 
-        private int CurrentTokenOffset { get; set; }
-        [NotNull] private List<string> Errors { get; set; } = new List<string>();
+        private int _currentTokenOffset;
+        [NotNull] private List<(string, SyntaxToken?)> _errors = new List<(string, SyntaxToken?)>();
 
         [MaybeNull]
         private SyntaxToken CurrentToken
         {
-            [DebuggerStepThrough] get => Tokens.ElementAtOrDefault(CurrentTokenOffset);
+            [DebuggerStepThrough] get => _tokens.ElementAtOrDefault(_currentTokenOffset);
         }
 
         [return: NotNull]
         public DotGraphSyntax Parse()
         {
-            var graph = ParseGraph() ?? throw new ParserException(Errors);
+            var graph = ParseGraph() ?? throw new ParserException(_errors);
             NextToken();
             if (CurrentToken == null) return graph;
             var unparsed = new StringBuilder();
             CurrentToken.Write(unparsed);
             Console.WriteLine(CurrentToken);
-            Errors.Add($"Unparsed remainder - \"{unparsed}\"");
-            throw new ParserException(Errors);
+            Error($"Unparsed remainder - \"{unparsed}\"");
+            throw new ParserException(_errors);
         }
 
         [return: MaybeNull]
@@ -52,7 +52,7 @@ namespace TheGrapho.Parser
 
             if (strictDigraphOrGraph == null)
             {
-                Errors.Add($"Expecting strict, graph or digraph at {CurrentToken?.Start}.");
+                Error($"Expecting strict, graph or digraph at {CurrentToken?.Start}.");
                 return null;
             }
 
@@ -66,7 +66,7 @@ namespace TheGrapho.Parser
                 if (!(graphToken is KeywordSyntax ks) ||
                     !new[] {SyntaxKind.GraphToken, SyntaxKind.DigraphToken}.Contains(graphToken.Kind))
                 {
-                    Errors.Add($"Expecting graph after strict at {CurrentToken?.Start}.");
+                    Error($"Expecting graph after strict at {CurrentToken?.Start}.");
                     return null;
                 }
 
@@ -78,7 +78,7 @@ namespace TheGrapho.Parser
 
             if (graph == null)
             {
-                Errors.Add($"Expecting graph declaration at {CurrentToken?.Start}.");
+                Error($"Expecting graph declaration at {CurrentToken?.Start}.");
                 return null;
             }
 
@@ -88,7 +88,7 @@ namespace TheGrapho.Parser
 
             if (lbr == null)
             {
-                Errors.Add($"Expecting {{ after graph declaration at {CurrentToken?.Start}.");
+                Error($"Expecting {{ after graph declaration at {CurrentToken?.Start}.");
                 return null;
             }
 
@@ -97,13 +97,13 @@ namespace TheGrapho.Parser
 
             if (statementList == null)
             {
-                Errors.Add($"Expecting statement list after strict at {CurrentToken?.Start}.");
+                Error($"Expecting statement list after strict at {CurrentToken?.Start}.");
                 return null;
             }
 
             var rbr = PeekToken<PunctuationSyntax>(SyntaxKind.RightCurlyBracketToken);
             if (rbr != null) return new DotGraphSyntax(strict, graph, id, lbr, statementList, rbr);
-            Errors.Add($"Expecting }} after statement list at {CurrentToken?.Start}.");
+            Error($"Expecting }} after statement list at {CurrentToken?.Start}.");
             return null;
         }
 
@@ -141,7 +141,7 @@ namespace TheGrapho.Parser
 
             if (lsb == null)
             {
-                Errors.Add($"Expecting [ in attribute list at {CurrentToken?.Start}.");
+                Error($"Expecting [ in attribute list at {CurrentToken?.Start}.");
                 return null;
             }
 
@@ -150,7 +150,7 @@ namespace TheGrapho.Parser
 
             if (rsb == null)
             {
-                Errors.Add($"Expecting ] in attribute list at {CurrentToken?.Start}.");
+                Error($"Expecting ] in attribute list at {CurrentToken?.Start}.");
                 return null;
             }
 
@@ -168,7 +168,7 @@ namespace TheGrapho.Parser
 
                 if (rsb == null)
                 {
-                    Errors.Add($"Expecting ] in attribute list at {CurrentToken?.Start}.");
+                    Error($"Expecting ] in attribute list at {CurrentToken?.Start}.");
                     return null;
                 }
 
@@ -201,7 +201,7 @@ namespace TheGrapho.Parser
 
             if (assignment == null)
             {
-                Errors.Add($"Expecting assignment in assignment list at {CurrentToken?.Start}.");
+                Error($"Expecting assignment in assignment list at {CurrentToken?.Start}.");
                 return null;
             }
 
@@ -254,7 +254,7 @@ namespace TheGrapho.Parser
 
             if (@string == null)
             {
-                Errors.Add($"Expecting string or number in ID at {CurrentToken?.Start}.");
+                Error($"Expecting string or number in ID at {CurrentToken?.Start}.");
                 return null;
             }
 
@@ -270,7 +270,7 @@ namespace TheGrapho.Parser
 
             if (edgeOpPunctuation == null)
             {
-                Errors.Add($"Expecting -- or -> at {CurrentToken?.Start}.");
+                Error($"Expecting -- or -> at {CurrentToken?.Start}.");
                 return null;
             }
 
@@ -285,7 +285,7 @@ namespace TheGrapho.Parser
 
             if (firstId == null)
             {
-                Errors.Add($"Expecting target key in assignment at {CurrentToken?.Start}.");
+                Error($"Expecting target key in assignment at {CurrentToken?.Start}.");
                 return null;
             }
 
@@ -293,14 +293,14 @@ namespace TheGrapho.Parser
 
             if (equalsPunctuation == null)
             {
-                Errors.Add($"Expecting = in assignment at {CurrentToken?.Start}.");
+                Error($"Expecting = in assignment at {CurrentToken?.Start}.");
                 return null;
             }
 
             NextToken();
             var secondId = Backtracking(it => it.ParseId());
             if (secondId != null) return new DotAssignmentSyntax(firstId, equalsPunctuation, secondId);
-            Errors.Add($"Expecting value to assign in assignment at {CurrentToken?.Start}.");
+            Error($"Expecting value to assign in assignment at {CurrentToken?.Start}.");
             return null;
         }
 
@@ -310,7 +310,7 @@ namespace TheGrapho.Parser
             var nodeId = Backtracking(it => it.ParseNodeId());
             if (nodeId != null)
                 return new DotNodeStatementSyntax(nodeId, Backtracking(it => it.ParseAttributeList()));
-            Errors.Add($"Expecting node ID in node statement at {CurrentToken?.Start}.");
+            Error($"Expecting node ID in node statement at {CurrentToken?.Start}.");
             return null;
         }
 
@@ -319,7 +319,7 @@ namespace TheGrapho.Parser
         {
             var id = Backtracking(it => it.ParseId());
             if (id != null) return new DotNodeIdSyntax(id, Backtracking(it => it.ParsePort()));
-            Errors.Add($"Expecting ID in node ID at {CurrentToken?.Start}.");
+            Error($"Expecting ID in node ID at {CurrentToken?.Start}.");
             return null;
         }
 
@@ -330,7 +330,7 @@ namespace TheGrapho.Parser
 
             if (firstColonPunctuation == null)
             {
-                Errors.Add($"Expecting : in port at {CurrentToken?.Start}.");
+                Error($"Expecting : in port at {CurrentToken?.Start}.");
                 return null;
             }
 
@@ -339,7 +339,7 @@ namespace TheGrapho.Parser
 
             if (firstId == null)
             {
-                Errors.Add($"Expecting ID after : at {CurrentToken?.Start}.");
+                Error($"Expecting ID after : at {CurrentToken?.Start}.");
                 return null;
             }
 
@@ -357,17 +357,55 @@ namespace TheGrapho.Parser
         [return: MaybeNull]
         private DotStatementSyntax ParseStatement()
         {
-            var edgeStatement = Backtracking(it => it.ParseEdgeStatement());
+            DotEdgeStatementSyntax? edgeStatement;
+
+            if (CurrentToken is StringSyntax ||
+                PeekToken<PunctuationSyntax>(SyntaxKind.LeftCurlyBracketToken) != null)
+                if (PeekTokenP1<PunctuationSyntax>(SyntaxKind.EdgeOpTokenArrow, SyntaxKind.EdgeOpTokenBar) != null)
+                {
+                    edgeStatement = Backtracking(it => it.ParseEdgeStatement(), false);
+                    if (edgeStatement != null) return new DotStatementSyntax(edgeStatement);
+                    Console.WriteLine($"Expecting edge statement at {CurrentToken?.Start}.");
+                    return null;
+                }
+
+            edgeStatement = Backtracking(it => it.ParseEdgeStatement());
             if (edgeStatement != null) return new DotStatementSyntax(edgeStatement);
-            var assignment = Backtracking(it => it.ParseAssignment());
-            if (assignment != null) return new DotStatementSyntax(assignment);
-            var nodeStatement = Backtracking(it => it.ParseNodeStatement());
-            if (nodeStatement != null) return new DotStatementSyntax(nodeStatement);
-            var subgraph = Backtracking(it => it.ParseSubgraph());
-            if (subgraph != null) return new DotStatementSyntax(subgraph);
-            var attributeStatement = Backtracking(it => it.ParseAttributeStatement());
-            if (attributeStatement != null) return new DotStatementSyntax(attributeStatement);
-            Errors.Add($"Expecting statement at {CurrentToken?.Start}.");
+
+            if (CurrentToken is StringSyntax && PeekTokenP1<PunctuationSyntax>(SyntaxKind.EqualsSignToken) != null)
+            {
+                var assignment = Backtracking(it => it.ParseAssignment(), false);
+                if (assignment != null) return new DotStatementSyntax(assignment);
+                Error($"Expecting assignment statement at {CurrentToken?.Start}.");
+                return null;
+            }
+
+            if (CurrentToken is StringSyntax)
+            {
+                var nodeStatement = Backtracking(it => it.ParseNodeStatement(), false);
+                if (nodeStatement != null) return new DotStatementSyntax(nodeStatement);
+                Error($"Expecting Node ID statement at {CurrentToken?.Start}.");
+                return null;
+            }
+
+            if (PeekToken<PunctuationSyntax>(SyntaxKind.LeftCurlyBracketToken) != null ||
+                PeekToken<KeywordSyntax>(SyntaxKind.SubgraphToken) != null)
+            {
+                var subgraph = Backtracking(it => it.ParseSubgraph(), false);
+                if (subgraph != null) return new DotStatementSyntax(subgraph);
+                Error($"Expecting subgraph statement at {CurrentToken?.Start}.");
+                return null;
+            }
+
+            if (PeekToken<KeywordSyntax>(SyntaxKind.NodeToken, SyntaxKind.GraphToken, SyntaxKind.EdgeToken) != null)
+            {
+                var attributeStatement = Backtracking(it => it.ParseAttributeStatement(), false);
+                if (attributeStatement != null) return new DotStatementSyntax(attributeStatement);
+                Error($"Expecting attribute statement at {CurrentToken?.Start}.");
+                return null;
+            }
+
+            Error($"Expecting statement at {CurrentToken?.Start}.");
             return null;
         }
 
@@ -378,7 +416,7 @@ namespace TheGrapho.Parser
 
             if (edgeOperator == null)
             {
-                Errors.Add($"Expecting edge operator in edge RHS at {CurrentToken?.Start}.");
+                Error($"Expecting edge operator in edge RHS at {CurrentToken?.Start}.");
                 return null;
             }
 
@@ -387,7 +425,7 @@ namespace TheGrapho.Parser
 
             if (nodeIdOrSubgraph == null)
             {
-                Errors.Add(
+                Error(
                     $"Expecting node ID or subgraph after edge operator in edge RHS at {CurrentToken?.Start}.");
                 return null;
             }
@@ -408,7 +446,7 @@ namespace TheGrapho.Parser
                     continue;
                 }
 
-                Errors.Add($"Expecting node ID or subgraph after edge operator at {CurrentToken?.Start}.");
+                Error($"Expecting node ID or subgraph after edge operator at {CurrentToken?.Start}.");
                 return null;
             }
 
@@ -423,7 +461,7 @@ namespace TheGrapho.Parser
 
             if (nodeIdOrSubgraph == null)
             {
-                Errors.Add($"Expecting node ID or subgraph in edge statement at {CurrentToken?.Start}.");
+                Error($"Expecting node ID or subgraph in edge statement at {CurrentToken?.Start}.");
                 return null;
             }
 
@@ -433,7 +471,7 @@ namespace TheGrapho.Parser
                 return new DotEdgeStatementSyntax(nodeIdOrSubgraph, edgeRhs,
                     Backtracking(it => it.ParseAttributeList()));
 
-            Errors.Add($"Expecting edge RHS at {CurrentToken?.Start}.");
+            Error($"Expecting edge RHS at {CurrentToken?.Start}.");
             return null;
         }
 
@@ -443,12 +481,12 @@ namespace TheGrapho.Parser
             where TResult : DotSyntax
         {
             if (action == null) throw new ArgumentNullException(nameof(action));
-            var old = CurrentTokenOffset;
-            var oldErrors = Errors.ToList();
+            var old = _currentTokenOffset;
+            var oldErrors = _errors.ToList();
             var result = action(this);
             if (result != null) return result;
-            CurrentTokenOffset = old;
-            if (hideErrors) Errors = oldErrors;
+            _currentTokenOffset = old;
+            if (hideErrors) _errors = oldErrors;
             return null;
         }
 
@@ -467,7 +505,28 @@ namespace TheGrapho.Parser
             return result;
         }
 
+        private void Error([DisallowNull] string message)
+        {
+            if (message == null) throw new ArgumentNullException(nameof(message));
+            _errors.Add((message, CurrentToken));
+        }
+
         [DebuggerStepThrough]
-        private void NextToken() => CurrentTokenOffset++;
+        [return: MaybeNull]
+        private T PeekTokenP1<T>([DisallowNull] params SyntaxKind[] kind) where T : SyntaxToken
+        {
+            if (kind == null) throw new ArgumentNullException(nameof(kind));
+            T? result;
+            var raw = _tokens.ElementAtOrDefault(_currentTokenOffset + 1);
+            if (raw == null) return null;
+
+            if (!kind.Contains(raw.Kind) || !(raw is T)) result = null;
+            else result = (T) raw;
+
+            return result;
+        }
+
+        [DebuggerStepThrough]
+        private void NextToken() => _currentTokenOffset++;
     }
 }

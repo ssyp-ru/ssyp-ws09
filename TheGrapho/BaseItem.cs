@@ -14,6 +14,11 @@ namespace TheGrapho
 {
     public class BaseItem : DependencyObject
     {
+        public static readonly DependencyProperty IsChildValidProperty = DependencyProperty.Register(
+            "IsChildValid",
+            typeof(bool),
+            typeof(BaseItem),
+            new PropertyMetadata(true));
         public static readonly DependencyProperty YProperty = DependencyProperty.Register(
             "Y",
             typeof(double),
@@ -22,8 +27,13 @@ namespace TheGrapho
             "X",
             typeof(double),
             typeof(BaseItem));
+        public static readonly DependencyProperty ZIndexProperty = DependencyProperty.Register(
+            "ZIndex",
+            typeof(int),
+            typeof(BaseItem));
         public double X { get { return (double)GetValue(XProperty); } set { SetValue(XProperty, value); } }
         public double Y { get { return (double)GetValue(YProperty); } set { SetValue(YProperty, value); } }
-
+        public int ZIndex { get { return (int)GetValue(ZIndexProperty); } set { SetValue(ZIndexProperty, value); } }
+        public bool IsChildvalid { get { return (bool)GetValue(IsChildValidProperty); } set { SetValue(IsChildValidProperty, value); } }
     }
 }

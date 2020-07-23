@@ -3,10 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using System.Collections;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using NUnit.Framework;
 
 namespace TheGrapho.Parser.Tests
 {
@@ -20,7 +17,10 @@ namespace TheGrapho.Parser.Tests
             "strict foo",
             "graph",
             "graph{",
-            "graph{{}"
+            "graph{{}",
+            "graph { foo= }",
+            "graph{subgraph}",
+            "graph{node}"
         };
     }
 

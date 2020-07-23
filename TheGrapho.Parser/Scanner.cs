@@ -16,21 +16,21 @@ namespace TheGrapho.Parser
     {
         public Scanner([DisallowNull] string source)
         {
-            Source = source ?? throw new ArgumentNullException(nameof(source));
+            _source = source ?? throw new ArgumentNullException(nameof(source));
         }
 
-        [NotNull] private StringBuilder Scratch { get; } = new StringBuilder();
-        [NotNull] private string Source { get; }
-        [MaybeNull] private SyntaxNode? CurrentNode { get; set; }
-        private int CurrentCharOffset { get; set; }
-        private ScannerState State { get; set; }
+        [NotNull] private readonly StringBuilder _scratch = new StringBuilder();
+        [NotNull] private string _source;
+        [MaybeNull] private SyntaxNode? _currentNode;
+        private int _currentCharOffset;
+        private ScannerState _state = ScannerState.Nothing;
 
-        private char CurrentChar => Source[CurrentCharOffset];
+        private char CurrentChar => _source[_currentCharOffset];
 
         [return: MaybeNull]
         private SyntaxNode Scan()
         {
-            State = (SafePeekChar(), SafePeekCharP1()) switch
+            _state = (SafePeekChar(), SafePeekCharP1()) switch
             {
                 var (c1, _) when c1.HasValue && CharacterUtilities.IsWhitespace(c1.Value) => ScannerState.Whitespace,
                 ('<', _) => ScannerState.Html,
@@ -61,9 +61,9 @@ namespace TheGrapho.Parser
                 _ => ScannerState.Nothing
             };
 
-            if (State == ScannerState.Nothing) return null;
+            if (_state == ScannerState.Nothing) return null;
             NextNode();
-            return CurrentNode;
+            return _currentNode;
         }
 
         [return: NotNull]
@@ -85,14 +85,14 @@ namespace TheGrapho.Parser
         private ScannerException GetException([DisallowNull] string message)
         {
             if (message == null) throw new ArgumentNullException(nameof(message));
-            return new ScannerException(CurrentCharOffset, message);
+            return new ScannerException(_currentCharOffset, message);
         }
 
-        private char PeekP1() => Source[CurrentCharOffset + 1];
+        private char PeekP1() => _source[_currentCharOffset + 1];
 
         private void NextNode()
         {
-            CurrentNode = State switch
+            _currentNode = _state switch
             {
                 ScannerState.Keyword => ScanKeyword(),
                 ScannerState.Number => ScanNumber(),
@@ -114,7 +114,7 @@ namespace TheGrapho.Parser
         private SyntaxNode ScanPunctuation1()
         {
             var c = CurrentChar;
-            var start = CurrentCharOffset;
+            var start = _currentCharOffset;
             NextChar();
             var k = Grammar.Punctuation.GetValueOrDefault($"{c}");
             if (k == SyntaxKind.Nothing) throw GetException($"Expecting punctuation, found {CurrentChar}.");
@@ -124,7 +124,7 @@ namespace TheGrapho.Parser
         [return: NotNull]
         private SyntaxNode ScanPunctuation2()
         {
-            var start = CurrentCharOffset;
+            var start = _currentCharOffset;
             var c1 = CurrentChar;
             NextChar();
             var c2 = CurrentChar;
@@ -137,17 +137,17 @@ namespace TheGrapho.Parser
         [return: NotNull]
         private SyntaxToken ScanHtml()
         {
-            Scratch.Clear();
-            var start = CurrentCharOffset;
+            _scratch.Clear();
+            var start = _currentCharOffset;
             var level = 1;
             if (CurrentChar != '<') throw GetException($"Expecting <, found {CurrentChar}.");
-            Scratch.Append('<');
+            _scratch.Append('<');
             NextChar();
 
             while (true)
             {
                 if (Empty()) throw GetException("Unexpected end of file.");
-                Scratch.Append(CurrentChar);
+                _scratch.Append(CurrentChar);
 
                 switch (CurrentChar)
                 {
@@ -167,34 +167,34 @@ namespace TheGrapho.Parser
             return new StringSyntax(
                 SyntaxKind.HtmlStringToken,
                 start,
-                CurrentCharOffset - start,
-                Scratch.ToString().Substring(1, Scratch.Length - 2));
+                _currentCharOffset - start,
+                _scratch.ToString().Substring(1, _scratch.Length - 2));
         }
 
-        private bool Empty() => !(CurrentCharOffset < Source.Length);
+        private bool Empty() => !(_currentCharOffset < _source.Length);
 
         [return: NotNull]
         private SyntaxToken ScanKeyword()
         {
-            Scratch.Clear();
-            var start = CurrentCharOffset;
+            _scratch.Clear();
+            var start = _currentCharOffset;
             if (!char.IsLetter(CurrentChar)) throw GetException($"Expecting letter, found {CurrentChar}.");
-            Scratch.Append(CurrentChar);
+            _scratch.Append(CurrentChar);
             SyntaxKind k;
 
             while (true)
             {
                 NextChar();
-                if (Empty() || Scratch.Length > Grammar.MaxKeywordLength)
+                if (Empty() || _scratch.Length > Grammar.MaxKeywordLength)
                     throw GetException(
-                        $"Unexpected end of file or it is impossible to find matching keyword for {Scratch}.");
+                        $"Unexpected end of file or it is impossible to find matching keyword for {_scratch}.");
 
                 var c = CurrentChar;
 
                 if (char.IsLetterOrDigit(c))
                 {
-                    Scratch.Append(c);
-                    k = Grammar.Keywords.GetValueOrDefault(Scratch.ToString());
+                    _scratch.Append(c);
+                    k = Grammar.Keywords.GetValueOrDefault(_scratch.ToString());
 
                     if (k != SyntaxKind.Nothing)
                         break;
@@ -203,14 +203,14 @@ namespace TheGrapho.Parser
             }
 
             NextChar();
-            return new KeywordSyntax(k, start, CurrentCharOffset - start, Scratch.ToString());
+            return new KeywordSyntax(k, start, _currentCharOffset - start, _scratch.ToString());
         }
 
         [return: NotNull]
         private SyntaxTrivia ScanBlockComment()
         {
-            var start = CurrentCharOffset;
-            Scratch.Clear();
+            var start = _currentCharOffset;
+            _scratch.Clear();
             if (CurrentChar != '/') throw GetException($"Expecting /, found {CurrentChar}.");
             NextChar();
             if (CurrentChar != '*') throw GetException($"Expecting *, found {CurrentChar}.");
@@ -232,18 +232,18 @@ namespace TheGrapho.Parser
                 else
                 {
                     if (hasAsterisk)
-                        Scratch.Append('*');
+                        _scratch.Append('*');
 
                     hasAsterisk = false;
-                    Scratch.Append(c);
+                    _scratch.Append(c);
                 }
             }
 
             var scanBlockComment = new SyntaxTrivia(
                 SyntaxKind.BlockCommentTrivia,
                 start,
-                CurrentCharOffset - start,
-                Scratch.ToString());
+                _currentCharOffset - start,
+                _scratch.ToString());
 
             return scanBlockComment;
         }
@@ -251,26 +251,26 @@ namespace TheGrapho.Parser
         [return: NotNull]
         private SyntaxTrivia ScanWhitespace()
         {
-            var start = CurrentCharOffset;
-            Scratch.Clear();
+            var start = _currentCharOffset;
+            _scratch.Clear();
 
             while (true)
             {
                 if (Empty()) break;
                 var c = CurrentChar;
                 if (!CharacterUtilities.IsWhitespace(c)) break;
-                Scratch.Append(c);
+                _scratch.Append(c);
                 NextChar();
             }
 
-            return new SyntaxTrivia(SyntaxKind.WhitespaceTrivia, start, CurrentCharOffset - start, Scratch.ToString());
+            return new SyntaxTrivia(SyntaxKind.WhitespaceTrivia, start, _currentCharOffset - start, _scratch.ToString());
         }
 
         [return: NotNull]
         private SyntaxTrivia ScanPreprocessor()
         {
-            Scratch.Clear();
-            var start = CurrentCharOffset;
+            _scratch.Clear();
+            var start = _currentCharOffset;
             if (CurrentChar != '#') throw GetException($"Expecting #, found {CurrentChar}.");
 
             while (!Empty())
@@ -278,18 +278,18 @@ namespace TheGrapho.Parser
                 NextChar();
                 var c = CurrentChar;
                 if (c == '\n') break;
-                Scratch.Append(c);
+                _scratch.Append(c);
             }
 
-            return new SyntaxTrivia(SyntaxKind.PreprocessorTrivia, start, CurrentCharOffset - start,
-                Scratch.ToString());
+            return new SyntaxTrivia(SyntaxKind.PreprocessorTrivia, start, _currentCharOffset - start,
+                _scratch.ToString());
         }
 
         [return: NotNull]
         private SyntaxTrivia ScanLineComment()
         {
-            var start = CurrentCharOffset;
-            Scratch.Clear();
+            var start = _currentCharOffset;
+            _scratch.Clear();
             if (CurrentChar != '/') throw GetException($"Expecting /, found {CurrentChar}.");
             NextChar();
             if (CurrentChar != '/') throw GetException($"Expecting /, found {CurrentChar}.");
@@ -299,22 +299,23 @@ namespace TheGrapho.Parser
                 NextChar();
                 var c = CurrentChar;
                 if (c == '\n') break;
-                Scratch.Append(c);
+                _scratch.Append(c);
             }
 
-            return new SyntaxTrivia(SyntaxKind.LineCommentTrivia, start, CurrentCharOffset - start, Scratch.ToString());
+            return new SyntaxTrivia(SyntaxKind.LineCommentTrivia, start, _currentCharOffset - start,
+                _scratch.ToString());
         }
 
         [return: NotNull]
         private SyntaxToken ScanId()
         {
-            Scratch.Clear();
-            var start = CurrentCharOffset;
+            _scratch.Clear();
+            var start = _currentCharOffset;
 
             if (!char.IsLetter(CurrentChar) && CurrentChar != '_')
                 throw GetException($"Expecting letter or _, found {CurrentChar}.");
 
-            Scratch.Append(CurrentChar);
+            _scratch.Append(CurrentChar);
             NextChar();
 
             while (true)
@@ -322,20 +323,20 @@ namespace TheGrapho.Parser
                 if (Empty()) break;
                 var c = CurrentChar;
 
-                if (CharacterUtilities.IsDigitLetterOrUnderscore(c)) Scratch.Append(c);
+                if (CharacterUtilities.IsDigitLetterOrUnderscore(c)) _scratch.Append(c);
                 else break;
 
                 NextChar();
             }
 
-            return new StringSyntax(SyntaxKind.IdToken, start, CurrentCharOffset - start, Scratch.ToString());
+            return new StringSyntax(SyntaxKind.IdToken, start, _currentCharOffset - start, _scratch.ToString());
         }
 
         [return: NotNull]
         private SyntaxToken ScanString()
         {
-            var start = CurrentCharOffset;
-            Scratch.Clear();
+            var start = _currentCharOffset;
+            _scratch.Clear();
             if (CurrentChar != '"') throw GetException($"Expecting \", found {CurrentChar}.");
             var guarded = false;
             NextChar();
@@ -352,18 +353,18 @@ namespace TheGrapho.Parser
                         NextChar();
                         continue;
                     case '"' when guarded:
-                        Scratch.Append('"');
+                        _scratch.Append('"');
                         guarded = false;
                         NextChar();
                         continue;
                     case var c1 when c1 != '"' && guarded:
-                        Scratch.Append('\\');
-                        Scratch.Append(c);
+                        _scratch.Append('\\');
+                        _scratch.Append(c);
                         guarded = false;
                         NextChar();
                         continue;
                     case var c1 when c1 != '"' && !guarded:
-                        Scratch.Append(c);
+                        _scratch.Append(c);
                         NextChar();
                         continue;
                 }
@@ -373,14 +374,14 @@ namespace TheGrapho.Parser
                 break;
             }
 
-            return new StringSyntax(SyntaxKind.StringToken, start, CurrentCharOffset - start, Scratch.ToString());
+            return new StringSyntax(SyntaxKind.StringToken, start, _currentCharOffset - start, _scratch.ToString());
         }
 
         [return: NotNull]
         private SyntaxToken ScanNumber()
         {
             var sig = "";
-            var start = CurrentCharOffset;
+            var start = _currentCharOffset;
             if (Empty()) throw GetException("Unexpected end of file.");
 
             if (CurrentChar == '-')
@@ -392,13 +393,13 @@ namespace TheGrapho.Parser
             if (CurrentChar == '.')
             {
                 NextChar();
-                return new StringSyntax(SyntaxKind.NumberToken, start, CurrentCharOffset - start, $"{sig}.{Digits()}");
+                return new StringSyntax(SyntaxKind.NumberToken, start, _currentCharOffset - start, $"{sig}.{Digits()}");
             }
 
             var integerPart = Digits();
 
             if (Empty() || CurrentChar != '.')
-                return new StringSyntax(SyntaxKind.NumberToken, start, CurrentCharOffset - start,
+                return new StringSyntax(SyntaxKind.NumberToken, start, _currentCharOffset - start,
                     $"{sig}{integerPart}");
 
             NextChar();
@@ -406,22 +407,22 @@ namespace TheGrapho.Parser
             return new StringSyntax(
                 SyntaxKind.NumberToken,
                 start,
-                CurrentCharOffset - start,
+                _currentCharOffset - start,
                 $"{sig}{integerPart}.{Digits()}");
         }
 
         [return: NotNull]
         private string Digits()
         {
-            Scratch.Clear();
+            _scratch.Clear();
 
             while (!Empty() && char.IsDigit(CurrentChar))
             {
-                Scratch.Append(CurrentChar);
+                _scratch.Append(CurrentChar);
                 NextChar();
             }
 
-            return Scratch.ToString();
+            return _scratch.ToString();
         }
 
         private bool HasKeyword()
@@ -429,7 +430,7 @@ namespace TheGrapho.Parser
             return Grammar.Keywords.Keys.Any(k =>
             {
                 if (k == null) throw new ArgumentNullException(nameof(k));
-                var p1 = Source.ElementAtOrDefault(CurrentCharOffset + k.Length);
+                var p1 = _source.ElementAtOrDefault(_currentCharOffset + k.Length);
 
                 return !CharacterUtilities.IsDigitLetterOrUnderscore(p1) &&
                        string.Equals(PeekMany(k.Length), k, StringComparison.InvariantCultureIgnoreCase);
@@ -437,9 +438,9 @@ namespace TheGrapho.Parser
         }
 
         [return: MaybeNull]
-        private string PeekMany(int quantity) => Source.Length < quantity + CurrentCharOffset
+        private string PeekMany(int quantity) => _source.Length < quantity + _currentCharOffset
             ? null
-            : Source.Substring(CurrentCharOffset, quantity);
+            : _source.Substring(_currentCharOffset, quantity);
 
         [return: MaybeNull]
         private char? SafePeekChar()
@@ -451,14 +452,14 @@ namespace TheGrapho.Parser
         [return: MaybeNull]
         private char? SafePeekCharP1()
         {
-            if (!(CurrentCharOffset + 1 < Source.Length)) return null;
+            if (!(_currentCharOffset + 1 < _source.Length)) return null;
             return PeekP1();
         }
 
-        private void NextChar() => CurrentCharOffset++;
+        private void NextChar() => _currentCharOffset++;
 
         [return: NotNull]
-        public override string ToString() => $"{nameof(Source)}: {Source}";
+        public override string ToString() => $"{nameof(_source)}: {_source}";
 
         private enum ScannerState : byte
         {

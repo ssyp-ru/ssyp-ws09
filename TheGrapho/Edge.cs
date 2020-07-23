@@ -34,13 +34,19 @@ namespace TheGrapho
         {
             Source = source;
             Target = target;
+#if false
+            source.Edges.Add(this);
+            target.Edges.Add(this);
+#endif
             IsDirect = isDirect;
             Path = new PathGeometry();  // TODO: Move this to method
             DrawLine();
+            this.ZIndex = 0;
         }
         public void DrawLine()
         {
             // TODO: Add arrows
+            Path.Clear();
             var figure = new PathFigure();
             var (start_point, end_point) = FindOptimalCords();
             figure.Segments.Add(new LineSegment(start_point, true));
@@ -55,15 +61,15 @@ namespace TheGrapho
             else if ((xa1 = Source.X + Source.Size.Width) < (xa2 = Target.X)) { }
             else
             {
-                xa1 = (Source.X + Source.Size.Width) / 2;
-                xa2 = (Target.X + Target.Size.Width) / 2;
+                xa1 = Source.X + Source.Size.Width / 2;
+                xa2 = Target.X + Target.Size.Width / 2;
             }
             if ((ya1 = Source.Y) > (ya2 = Target.Y + Target.Size.Height)) { }
             else if ((ya1 = Source.Y + Source.Size.Height) < (ya2 = Target.Y)) { }
             else
             {
-                ya1 = (Source.Y + Source.Size.Height) / 2;
-                ya2 = (Target.Y + Target.Size.Height) / 2;
+                ya1 = Source.Y + Source.Size.Height / 2;
+                ya2 = Target.Y + Target.Size.Height / 2;
             }
             return (new Point(xa1, ya1), new Point(xa2, ya2));
         }

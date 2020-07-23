@@ -9,10 +9,18 @@ namespace TheGrapho.Parser.SimpleModel
 {
     public readonly struct Edge
     {
+        public Edge(Node source, Node target, bool isDirect)
+        {
+            Source = source;
+            Target = target;
+            IsDirect = isDirect;
+        }
+
         public Edge(Node source, Node target)
         {
             Source = source;
             Target = target;
+            IsDirect = false;
         }
 
         public bool Equals(Edge other) => Source.Equals(other.Source) && Target.Equals(other.Target);
@@ -26,5 +34,6 @@ namespace TheGrapho.Parser.SimpleModel
 
         public Node Source { get; }
         public Node Target { get; }
+        public bool IsDirect { get; }
     }
 }

@@ -14,5 +14,8 @@ namespace TheGrapho
     // TODO: Write this
     class EdgeControl : Control
     {
+        public EdgeControl()
+        {
+        }
     }
 }

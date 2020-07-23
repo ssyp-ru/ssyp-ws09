@@ -8,31 +8,27 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TheGrapho"
         mc:Ignorable="d"
+        Name="mainWindow"
         Title="MainWindow" Height="450" Width="800">
     <Window.Resources>
         <local:TemplateSelector x:Key="TemplateSelector"/>
         <ContextMenu x:Key="RightClickMenu">
             <MenuItem Header="Add Node" Click="MenuItem_Click"/>
         </ContextMenu>
-    </Window.Resources>
-    <DockPanel LastChildFill="True">
-        <Menu DockPanel.Dock="Top">
-            <MenuItem Header="File">
-                <MenuItem Header="New"></MenuItem>
-                <MenuItem Header="Open" Click="LoadFile"></MenuItem>
-                <MenuItem Header="Save"></MenuItem>
-            </MenuItem>
-        </Menu>
-        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" CanContentScroll="True">
-            <ItemsControl ItemsSource="{Binding Items}" ItemTemplateSelector="{StaticResource TemplateSelector}" Name="MainItemsControl">
-                <ItemsControl.ItemContainerStyle>
+
+        <Style TargetType="local:NewItemsControl">
+            <Setter Property="ItemTemplateSelector" Value="{StaticResource TemplateSelector}"/>
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
                     <Style>
-                        <Setter Property="Canvas.Left" Value="{Binding X, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <Setter Property="Canvas.Top" Value="{Binding Y, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <Setter Property="Canvas.Left" Value="{Binding X, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <Setter Property="Canvas.Top" Value="{Binding Y, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <Setter Property="Panel.ZIndex" Value="{Binding ZIndex, Mode=OneTime, UpdateSourceTrigger=PropertyChanged}"/>
                     </Style>
-                </ItemsControl.ItemContainerStyle>
-                <!--ItemContainerStyle="{Binding Style}"-->
-                <ItemsControl.ItemsPanel>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="ItemsPanel">
+                <Setter.Value>
                     <ItemsPanelTemplate>
                         <local:NewCanvasPanel Background="Transparent">
                             <Canvas.InputBindings>
@@ -40,30 +36,49 @@
                             </Canvas.InputBindings>
                         </local:NewCanvasPanel>
                     </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.Resources>
-                    <DataTemplate DataType="{x:Type local:Node}" x:Name="NodeTemplate">
-                        <local:NodeControl>
-                            <local:NodeControl.Template>
-                                <ControlTemplate>
-                                    <Border BorderThickness="2" Padding="0" Margin="0" BorderBrush="Black">
-                                        <Label Content="{Binding Name}" />
-                                    </Border>
-                                </ControlTemplate>
-                            </local:NodeControl.Template>
-                        </local:NodeControl>
-                    </DataTemplate>
-                    <DataTemplate DataType="{x:Type local:Edge}" x:Name="EdgeTemplate">
-                        <local:EdgeControl>
-                            <local:EdgeControl.Template>
-                                <ControlTemplate>
-                                    <Path Data="{Binding MainPath}" Stroke="Black"/>
-                                </ControlTemplate>
-                            </local:EdgeControl.Template>
-                        </local:EdgeControl>
-                    </DataTemplate>
-                </ItemsControl.Resources>
-            </ItemsControl>
+                </Setter.Value>
+            </Setter>
+            <Style.Resources>
+                <DataTemplate DataType="{x:Type local:Node}" x:Name="NodeTemplate">
+                    <local:NodeControl>
+                        <local:NodeControl.Template>
+                            <ControlTemplate>
+                                <Border BorderThickness="2" Padding="0" Margin="0" Background="LightGray" BorderBrush="Black">
+                                    <TextBox Text="{Binding Name, Mode=TwoWay}" Background="LightGray" Margin="10" 
+                                             IsEnabled="{Binding ElementName=mainWindow, Path=AllowRename}"/>
+                                </Border>
+                            </ControlTemplate>
+                        </local:NodeControl.Template>
+                    </local:NodeControl>
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type local:Edge}" x:Name="EdgeTemplate">
+                    <local:EdgeControl>
+                        <local:EdgeControl.Template>
+                            <ControlTemplate>
+                                <Path Data="{Binding MainPath}" Stroke="Black"/>
+                            </ControlTemplate>
+                        </local:EdgeControl.Template>
+                    </local:EdgeControl>
+                </DataTemplate>
+            </Style.Resources>
+        </Style>
+        
+    </Window.Resources>
+    <DockPanel LastChildFill="True">
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="File">
+                <MenuItem Header="New" Click="ClearCanvas"></MenuItem>
+                <MenuItem Header="Open" Click="LoadFile"></MenuItem>
+                <MenuItem Header="Save" Click="SaveFile"></MenuItem>
+            </MenuItem>
+            <MenuItem Header="Editor">
+                <CheckBox Content="Allow move" IsChecked="{Binding AllowMove, Mode=TwoWay}"/>
+                <CheckBox Content="Allow rename" IsChecked="{Binding AllowRename, Mode=TwoWay}"/>
+            </MenuItem>
+            <MenuItem Header="Update Graph" Click="UpdateGraphClick"/>
+        </Menu>
+        <ScrollViewer HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible" CanContentScroll="True">
+            <local:NewItemsControl x:Name="MainItemsControl" ItemsSource="{Binding Items}"/>
         </ScrollViewer>
     </DockPanel>
 </Window>

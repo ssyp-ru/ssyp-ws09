@@ -21,6 +21,7 @@ namespace TheGrapho
 {
     public class Node : BaseItem
     {
+        //public List<Edge> Edges = new List<Edge>();
         static int id = 0;
         public static readonly DependencyProperty NameProperty;
         public Size Size { get; set; }
@@ -30,6 +31,7 @@ namespace TheGrapho
         {
             this.Name = Name;
             id++;
+            this.ZIndex = 1;
         }
         public Node(Point position) : this($"Node{id}") 
         {

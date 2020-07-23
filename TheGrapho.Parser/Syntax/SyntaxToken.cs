@@ -41,10 +41,10 @@ namespace TheGrapho.Parser.Syntax
         public override string ToString()
         {
             var properties = new List<object> {$"{base.ToString()}"};
-            
+
             if (TrailingTrivia.Count != 0)
                 properties.Add($"{nameof(TrailingTrivia)}: [{string.Join(", ", TrailingTrivia)}]");
-            
+
             if (LeadingTrivia.Count != 0)
                 properties.Add($"{nameof(LeadingTrivia)}: [{string.Join(", ", LeadingTrivia)}]");
 

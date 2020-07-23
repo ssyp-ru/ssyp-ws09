@@ -5,14 +5,19 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using TheGrapho.Parser.Syntax;
 
 namespace TheGrapho.Parser
 {
     public class ParserException : Exception
     {
-        public ParserException([DisallowNull] IEnumerable<string> errors) : base($"[{string.Join("; ", errors)}]")
+        [NotNull] public IReadOnlyCollection<(string Message, SyntaxToken? Token)> Errors { get; }
+
+        public ParserException([DisallowNull] IReadOnlyCollection<(string Message, SyntaxToken? Token)> errors) : base(
+            $"[{string.Join("; ", errors.Select(it => it.Message))}]")
         {
-            if (errors == null) throw new ArgumentNullException(nameof(errors));
+            Errors = errors ?? throw new ArgumentNullException(nameof(errors));
         }
     }
 }
