@@ -24,6 +24,7 @@ using TheGrapho.Parser.SimpleModel;
 using System.Windows.Controls.Primitives;
 using System.Globalization;
 using TheGrapho.Parser.Syntax;
+using System.Drawing.Printing;
 
 namespace TheGrapho
 {
@@ -32,6 +33,7 @@ namespace TheGrapho
     /// </summary>
     public partial class MainWindow : Window
     {
+        private ScaleTransform scaleTransform = new ScaleTransform();
         private string currentFile;
         public static readonly DependencyProperty AllowMoveProperty = DependencyProperty.Register(
             "AllowMove",
@@ -50,6 +52,7 @@ namespace TheGrapho
         {
             InitializeComponent();
             this.DataContext = this;
+            resetScale.Click += new RoutedEventHandler(zoomBorder.Reset);
 
             Node Item1 = new Node("Testing");
             Node Item = new Node("Testing coords");
@@ -59,8 +62,8 @@ namespace TheGrapho
             Items.Add(Item);
             Items.Add(Item1);
             Items.Add(item2);
-            Items.Add(new Edge(Item, Item1, false));
-            Items.Add(new Edge(Item1, item2, false));
+            Items.Add(new Edge(Item, Item1, true));
+            Items.Add(new Edge(Item1, item2, true));
             MainItemsControl.Loaded += DebugMethod;
         }
         private void DebugMethod(object sender, RoutedEventArgs e)
@@ -137,20 +140,38 @@ namespace TheGrapho
             }
             // Code to save to file
             // Everyone one can rewrite it
-            List<DotNodeStatementSyntax> nodes = new List<DotNodeStatementSyntax>();
-            List<DotEdgeStatementSyntax> edges = new List<DotEdgeStatementSyntax>();
+            List<Node> nodes = new List<Node>();
+            List<Edge> edges = new List<Edge>();
             foreach(var item in Items)
             {
-                if(item is Node)
+                if (item is Node)
                 {
-                    //nodes.Add(new DotNodeStatementSyntax())
+                    nodes.Add((Node)item);
+                }
+                if (item is Edge)
+                {
+                    edges.Add((Edge)item);
                 }
             }
+            StreamWriter writer = new StreamWriter(currentFile, false);
+            writer.WriteLine("digraph digraphName {");
+            foreach(var item in nodes)
+            {
+                writer.WriteLine($"\t{item.Name};");
+            }
+            foreach(var item in edges)
+            {
+                writer.WriteLine($"\t{item.Source.Name} -- {item.Target.Name}");
+            }
+            writer.Write("}");
+            writer.Flush();
+            writer.Close();
         }
 
         public void ClearCanvas(object sender, RoutedEventArgs e)
         {
             Items.Clear();
+            currentFile = null;
         }
 
         private void UpdateGraphClick(object sender, RoutedEventArgs e)
@@ -161,9 +182,28 @@ namespace TheGrapho
         {
             Items.Last().IsChildvalid = false;
         }
-        private void DrawEdges()
+        private void UpdateEdges()
         {
             MainItemsControl.UpdateEdges();
+        }
+
+        private void AddEdgesAsGod(object sender, RoutedEventArgs e)
+        {
+            MainItemsControl.AddEdgesAsMason();
+        }
+        private void AddEdgesAsChain(object sender, RoutedEventArgs e)
+        {
+            MainItemsControl.AddEdgesAsChain();
+        }
+
+        private void DeleteItems(object sender, RoutedEventArgs e)
+        {
+            MainItemsControl.DeleteSelectedItems();
+        }
+
+        private void RemoveSelection(object sender, RoutedEventArgs e)
+        {
+            MainItemsControl.RemoveSelection();
         }
     }
 

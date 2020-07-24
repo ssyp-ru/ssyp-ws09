@@ -17,6 +17,26 @@
         </ContextMenu>
 
         <Style TargetType="local:NewItemsControl">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ItemsControl}">
+                        <Canvas>
+                            <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="true">
+                                <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                            </Border>
+                            <Path Stroke="LightBlue" Fill="Blue" Opacity="0.3">
+                                <Path.Data>
+                                    <RectangleGeometry x:Name="Selection"/>
+                                </Path.Data>
+                            </Path>
+                        </Canvas>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
             <Setter Property="ItemTemplateSelector" Value="{StaticResource TemplateSelector}"/>
             <Setter Property="ItemContainerStyle">
                 <Setter.Value>
@@ -43,7 +63,7 @@
                     <local:NodeControl>
                         <local:NodeControl.Template>
                             <ControlTemplate>
-                                <Border BorderThickness="2" Padding="0" Margin="0" Background="LightGray" BorderBrush="Black">
+                                <Border BorderThickness="{Binding Thickness, Mode=OneWay}" Padding="0" Margin="0" Background="LightGray" BorderBrush="{Binding Stroke, Mode=OneWay}">
                                     <TextBox Text="{Binding Name, Mode=TwoWay}" Background="LightGray" Margin="10" 
                                              IsEnabled="{Binding ElementName=mainWindow, Path=AllowRename}"/>
                                 </Border>
@@ -55,7 +75,10 @@
                     <local:EdgeControl>
                         <local:EdgeControl.Template>
                             <ControlTemplate>
-                                <Path Data="{Binding MainPath}" Stroke="Black"/>
+                                <Canvas>
+                                    <Path Data="{Binding MainPath}" Stroke="{Binding Stroke}" StrokeThickness="{Binding Thickness}"/>
+                                    <Path Data="{Binding MainPath}" Stroke="Transparent" StrokeThickness="20"/>
+                                </Canvas>
                             </ControlTemplate>
                         </local:EdgeControl.Template>
                     </local:EdgeControl>
@@ -72,13 +95,22 @@
                 <MenuItem Header="Save" Click="SaveFile"></MenuItem>
             </MenuItem>
             <MenuItem Header="Editor">
-                <CheckBox Content="Allow move" IsChecked="{Binding AllowMove, Mode=TwoWay}"/>
-                <CheckBox Content="Allow rename" IsChecked="{Binding AllowRename, Mode=TwoWay}"/>
+                <MenuItem IsCheckable="True" Header="Allow move" IsChecked="{Binding AllowMove, Mode=TwoWay}"/>
+                <MenuItem IsCheckable="True" Header="Allow rename" IsChecked="{Binding AllowRename, Mode=TwoWay}"/>
+            </MenuItem>
+            <MenuItem Header="Selection">
+                <MenuItem Header="Remove Selection" Click="RemoveSelection"/>
+                <MenuItem Header="Delete Selected Items" Click="DeleteItems"/>
+                <MenuItem Header="Add Edges Between Selected Nodes" Click="AddEdgesAsChain"/>
+                <MenuItem Header="Add Edges From First Selected Node" Click="AddEdgesAsGod"/>
             </MenuItem>
             <MenuItem Header="Update Graph" Click="UpdateGraphClick"/>
+            <MenuItem Header="Scale">
+                <MenuItem Name="resetScale" Header="= scale"/>
+            </MenuItem>
         </Menu>
-        <ScrollViewer HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible" CanContentScroll="True">
+        <local:ZoomBorder x:Name="zoomBorder" ClipToBounds="True" Background="AliceBlue">
             <local:NewItemsControl x:Name="MainItemsControl" ItemsSource="{Binding Items}"/>
-        </ScrollViewer>
+        </local:ZoomBorder>
     </DockPanel>
 </Window>

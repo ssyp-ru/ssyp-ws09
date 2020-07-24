@@ -14,7 +14,7 @@ using System.Windows.Media;
 
 namespace TheGrapho
 {
-    class NewCanvasPanel : Canvas
+    public class NewCanvasPanel : Canvas
     {
         private static readonly DependencyPropertyDescriptor TopPropertyDescriptor =
             DependencyPropertyDescriptor.FromProperty(TopProperty, typeof(Canvas));

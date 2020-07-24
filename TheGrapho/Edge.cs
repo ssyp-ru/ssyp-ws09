@@ -12,6 +12,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
+using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -27,17 +28,14 @@ namespace TheGrapho
             "MainPath",
             typeof(PathGeometry),
             typeof(Edge));
-        Node Source, Target;
+        public Node Source, Target;
         bool IsDirect;
-        PathGeometry Path { get { return (PathGeometry)GetValue(PathProperty); } set { SetValue(PathProperty, value); } }
-        public Edge(Node source, Node target, bool isDirect)
+        public Rect Borders;
+        public PathGeometry Path { get { return (PathGeometry)GetValue(PathProperty); } set { SetValue(PathProperty, value); } }
+        public Edge(Node source, Node target, bool isDirect, Style style = null)
         {
             Source = source;
             Target = target;
-#if false
-            source.Edges.Add(this);
-            target.Edges.Add(this);
-#endif
             IsDirect = isDirect;
             Path = new PathGeometry();  // TODO: Move this to method
             DrawLine();
@@ -49,11 +47,55 @@ namespace TheGrapho
             Path.Clear();
             var figure = new PathFigure();
             var (start_point, end_point) = FindOptimalCords();
-            figure.Segments.Add(new LineSegment(start_point, true));
-            figure.StartPoint = end_point;
-            figure.IsClosed = true;
+            figure.Segments.Add(new LineSegment(end_point, true));
+            figure.StartPoint = start_point;
+            figure.IsClosed = false;
+            if (IsDirect)
+            {
+                double sin = 1, cos = 1;
+                var vec = (start_point - end_point);
+                vec.Normalize();
+                double dx = vec.X, dy = vec.Y;
+                figure.Segments.Add(
+                    new LineSegment(
+                        new Point(
+                            end_point.X + (dx * cos + dy * -sin),
+                            end_point.Y + (dx * sin + dy * cos)
+                            ), 
+                        true
+                        )
+                    );
+                figure.Segments.Add(new LineSegment(end_point, true));
+                figure.Segments.Add(
+                    new LineSegment(
+                        new Point(
+                            end_point.X + (dx * cos + dy * sin),
+                            end_point.Y + (dx * -sin + dy * cos)
+                            ), 
+                        true
+                        )
+                    );
+                figure.Segments.Add(new LineSegment(end_point, true));
+            }
+            Borders = new Rect(start_point, end_point);
             Path.Figures.Add(figure);
+            if (PositionOfSelection != null)
+                Select();
         }
+        public override void Select(Brush color = null)
+        {
+            base.Select(color);
+            var rectgeom = new RectangleGeometry();
+            rectgeom.Rect = Borders;
+            Path.AddGeometry(rectgeom);
+            //temp.CurrentStyle.Setters;
+        }
+        public override void Deselect()
+        {
+            base.Deselect();
+            DrawLine();
+        }
+
         private (Point, Point) FindOptimalCords()
         {
             double xa1 = 0, ya1 = 0, xa2 = 0, ya2 = 0;

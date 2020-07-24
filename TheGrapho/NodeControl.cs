@@ -8,8 +8,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 
 namespace TheGrapho
 {
@@ -17,6 +19,7 @@ namespace TheGrapho
     {
         public NodeControl()
         {
+            PreviewMouseDown += SelectItem;
             DragDelta += new DragDeltaEventHandler(OnThumbDragDelta);
         }
 
@@ -27,14 +30,26 @@ namespace TheGrapho
             {
                 ((BaseItem)DataContext).X += args.HorizontalChange;
                 ((BaseItem)DataContext).Y += args.VerticalChange;
+                ((BaseItem)DataContext).PositionOfSelection = null;
+                ((BaseItem)DataContext).Deselect();
                 window.MainItemsControl.UpdateEdges();
-#if false
-                foreach(var item in ((Node)DataContext).Edges)
-                {
-                    //MessageBox.Show($"Source: {item.}");
-                    item.DrawLine();
-                }
-#endif
+                window.MainItemsControl.SelectionStartingPoint = null;
+                
+            }
+        }
+        private void SelectItem(object sender, MouseButtonEventArgs e)
+        {
+            var temp = DataContext as BaseItem;
+            if (temp.PositionOfSelection == null || temp.PositionOfSelection == int.MaxValue)
+            {
+                Node.Selected++;
+                temp.PositionOfSelection = Node.Selected;
+                temp.Select();
+            }
+            else
+            {
+                temp.PositionOfSelection = null;
+                temp.Deselect();
             }
         }
     }

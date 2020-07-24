@@ -22,10 +22,12 @@ namespace TheGrapho
     public class Node : BaseItem
     {
         //public List<Edge> Edges = new List<Edge>();
+
         static int id = 0;
+        public static int Selected = 0;
         public static readonly DependencyProperty NameProperty;
         public Size Size { get; set; }
-        string Name { get { return GetValue(NameProperty).ToString(); } set { SetValue(NameProperty, value); } }
+        public string Name { get { return GetValue(NameProperty).ToString(); } set { SetValue(NameProperty, value); } }
 
         public Node(string Name) 
         {
