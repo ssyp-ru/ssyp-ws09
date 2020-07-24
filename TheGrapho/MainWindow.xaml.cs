@@ -66,11 +66,11 @@ namespace TheGrapho
             Items.Add(new Edge(Item1, item2, true));
             MainItemsControl.Loaded += DebugMethod;
         }
+
         private void DebugMethod(object sender, RoutedEventArgs e)
         {
-            UpdateGraph();
         }
-        
+
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
             Items.Add(
@@ -174,17 +174,48 @@ namespace TheGrapho
             currentFile = null;
         }
 
-        private void UpdateGraphClick(object sender, RoutedEventArgs e)
+        private void InvalidateAll(object sender, RoutedEventArgs e)
         {
-            UpdateGraph();
+            foreach (var item in Items)
+                item.HasValidLayout = false;
         }
-        private void UpdateGraph()
+
+        private void InvalidateNodes(object sender, RoutedEventArgs e)
         {
-            Items.Last().IsChildvalid = false;
+            foreach (var item in Items.OfType<Node>())
+                item.HasValidLayout = false;
         }
-        private void UpdateEdges()
+
+        private void InvalidateEdges(object sender, RoutedEventArgs e)
+        {
+            foreach (var item in Items.OfType<Edge>())
+                item.HasValidLayout = false;
+        }
+
+        private void InvalidateRoutes(object sender, RoutedEventArgs e)
+        {
+            foreach (var item in Items.OfType<Node>())
+                item.AreDependentRoutesValid = false;
+        }
+
+        private void DoFullLayout(object sender, RoutedEventArgs e)
+        {
+            MainItemsControl.UpdateNodes();
+        }
+
+        private void DoEdgeLayout(object sender, RoutedEventArgs e)
         {
             MainItemsControl.UpdateEdges();
+        }
+
+        private void SwitchToRandomLayout(object sender, RoutedEventArgs e)
+        {
+            MainItemsControl.Algorithm = NewItemsControl.LayoutAlgorithm.Random;
+        }
+
+        private void SwitchToCircularLayout(object sender, RoutedEventArgs e)
+        {
+            MainItemsControl.Algorithm = NewItemsControl.LayoutAlgorithm.Circular;
         }
 
         private void AddEdgesAsGod(object sender, RoutedEventArgs e)

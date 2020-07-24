@@ -32,7 +32,6 @@ namespace TheGrapho
                 ((BaseItem)DataContext).Y += args.VerticalChange;
                 ((BaseItem)DataContext).PositionOfSelection = null;
                 ((BaseItem)DataContext).Deselect();
-                window.MainItemsControl.UpdateEdges();
                 window.MainItemsControl.SelectionStartingPoint = null;
                 
             }

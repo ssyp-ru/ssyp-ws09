@@ -21,13 +21,41 @@ namespace TheGrapho
 {
     public class Node : BaseItem
     {
-        //public List<Edge> Edges = new List<Edge>();
+        public static readonly DependencyProperty AreDependentRoutesValidProperty = DependencyProperty.Register(
+            nameof(AreDependentRoutesValid), typeof(bool),
+            typeof(Node), new PropertyMetadata(false)
+        );
 
         static int id = 0;
         public static int Selected = 0;
         public static readonly DependencyProperty NameProperty;
-        public Size Size { get; set; }
+        private Size _size;
+        private bool _isAddedManually;
+
+        public Size Size
+        {
+            get => _size;
+            set
+            {
+                if (_size == value)
+                    return;
+
+                _size = value;
+
+                if (CanSizeChangeInvalidateLayout)
+                    HasValidLayout = false;
+                else
+                    AreDependentRoutesValid = false;
+            }
+        }
+
         public string Name { get { return GetValue(NameProperty).ToString(); } set { SetValue(NameProperty, value); } }
+
+        public bool AreDependentRoutesValid
+        {
+            get => (bool)GetValue(AreDependentRoutesValidProperty);
+            set => SetValue(AreDependentRoutesValidProperty, value);
+        }
 
         public Node(string Name) 
         {
@@ -35,11 +63,23 @@ namespace TheGrapho
             id++;
             this.ZIndex = 1;
         }
-        public Node(Point position) : this($"Node{id}") 
+
+        private bool CanSizeChangeInvalidateLayout => !_isAddedManually;
+
+        protected override void OnPositionChanged(DependencyPropertyChangedEventArgs e)
+        {
+            AreDependentRoutesValid = false;
+            _isAddedManually = false;
+        }
+
+        public Node(Point position) : this($"Node{id}")
         {
             X = position.X;
             Y = position.Y;
+            _isAddedManually = true;
+            HasValidLayout = true;
         }
+
         static Node()
         {
             NameProperty = DependencyProperty.Register(

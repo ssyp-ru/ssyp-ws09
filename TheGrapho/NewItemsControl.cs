@@ -16,19 +16,36 @@ using System.Globalization;
 using System.Windows.Input;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+using TheGrapho.Layout;
 
 namespace TheGrapho
 {
     public class NewItemsControl : ItemsControl
     {
         public static readonly DependencyProperty IsLayoutValidProperty = DependencyProperty.Register(
-            "IsLayoutValid",
-            typeof(bool),
-            typeof(NewItemsControl),
-            new PropertyMetadata(OnLayoutValidChanged));
-        public bool IsLayoutValid { get { return (bool)GetValue(IsLayoutValidProperty); } set { SetValue(IsLayoutValidProperty, value); } }
+            nameof(IsLayoutValid), typeof(bool),
+            typeof(NewItemsControl), new PropertyMetadata(true, OnLayoutValidChanged)
+        );
 
-        MultiBinding bindings;
+        public bool IsLayoutValid
+        {
+            get => (bool) GetValue(IsLayoutValidProperty);
+            set => SetValue(IsLayoutValidProperty, value);
+        }
+
+        public static readonly DependencyProperty AreEdgeRoutesValidProperty = DependencyProperty.Register(
+            nameof(AreEdgeRoutesValid), typeof(bool),
+            typeof(NewItemsControl), new PropertyMetadata(true, OnEdgeRoutesValidChanged)
+        );
+
+        public bool AreEdgeRoutesValid
+        {
+            get => (bool)GetValue(AreEdgeRoutesValidProperty);
+            set => SetValue(AreEdgeRoutesValidProperty, value);
+        }
+
+        private static readonly ChangeValidationPropertyConverter ChangeValidationPropertyConverterValue = new ChangeValidationPropertyConverter();
+
         public Point? SelectionStartingPoint;
         public NewItemsControl() : base()
         {
@@ -41,26 +58,51 @@ namespace TheGrapho
 
         private void CreateMultiBinding(object sender, NotifyCollectionChangedEventArgs e)
         {
-            bindings = new MultiBinding
+            var layoutValidBinding = new MultiBinding
             {
                 Mode = BindingMode.OneWay,
-                Converter = new ChangeValidationPropertyConverter(),
+                FallbackValue = true,
+                Converter = ChangeValidationPropertyConverterValue,
             };
+
+            var routesValidBinding = new MultiBinding
+            {
+                Mode = BindingMode.OneWay,
+                FallbackValue = true,
+                Converter = ChangeValidationPropertyConverterValue,
+            };
+
             foreach (var item in Items)
             {
-                bindings.Bindings.Add(
+                layoutValidBinding.Bindings.Add(
                     new Binding
                     {
-                        Path = new PropertyPath("IsChildValid"),
-                        TargetNullValue = true,
-                        FallbackValue = true,
+                        Path = new PropertyPath(BaseItem.HasValidLayoutProperty),
+                        TargetNullValue = false,
+                        FallbackValue = false,
                         Source = item
                     }
+                );
+
+                if (item is Node)
+                {
+                    routesValidBinding.Bindings.Add(
+                        new Binding
+                        {
+                            Path = new PropertyPath(Node.AreDependentRoutesValidProperty),
+                            TargetNullValue = false,
+                            FallbackValue = false,
+                            Source = item
+                        }
                     );
+                }
             }
-            BindingOperations.SetBinding(this, IsLayoutValidProperty, bindings);
+
+            BindingOperations.SetBinding(this, IsLayoutValidProperty, layoutValidBinding);
+            BindingOperations.SetBinding(this, AreEdgeRoutesValidProperty, routesValidBinding);
         }
-        public class ChangeValidationPropertyConverter : IMultiValueConverter
+
+        private class ChangeValidationPropertyConverter : IMultiValueConverter
         {
             public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
             {
@@ -72,38 +114,109 @@ namespace TheGrapho
                 throw new NotSupportedException();
             }
         }
+
         private static void OnLayoutValidChanged(DependencyObject obj, DependencyPropertyChangedEventArgs e)
         {
             (obj as NewItemsControl)?.UpdateNodes();
         }
+
+        private static void OnEdgeRoutesValidChanged(DependencyObject obj, DependencyPropertyChangedEventArgs e)
+        {
+            (obj as NewItemsControl)?.UpdateEdges();
+        }
+
+        private bool _isLayoutInProgress;
+        private bool _hasNodesLayoutInProgressBeenHit;
+        private bool _hasEdgesLayoutInProgressBeenHit;
+
+        public enum LayoutAlgorithm
+        {
+            Random,
+            Circular,
+        }
+
+        public LayoutAlgorithm Algorithm { get; set; } = LayoutAlgorithm.Random;
+
+        private void RunRandom()
+        {
+            var bounds = new Rect(new Point(20, 20), new Size(ActualWidth, ActualHeight));
+            var next = new Random().Next();
+            new LayoutEngine(this, new RandomLayout(bounds, next)).Layout();
+        }
+        private void RunCircular()
+        {
+            new LayoutEngine(this, new CircleLayout()).Layout();
+        }
+
+        private void RunLayout()
+        {
+            switch (Algorithm)
+            {
+                case LayoutAlgorithm.Random:
+                    RunRandom();
+                    break;
+                case LayoutAlgorithm.Circular:
+                    RunCircular();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
         public void UpdateNodes()
         {
-            if (!IsLayoutValid) {
-                var rnd = new Random();
-
-                foreach (var item in Items)
-                {
-                    // TODO: Replace layouter
-                    if (item is Node)
-                    {
-                        var node_item = (Node)item;
-                        node_item.X = rnd.Next(20, Math.Max(20, Convert.ToInt32(ActualWidth) - 200));
-                        node_item.Y = rnd.Next(20, Math.Max(20, Convert.ToInt32(ActualHeight) - 100));
-                        node_item.IsChildvalid = true;
-                    }
-                }
+            if (_isLayoutInProgress)
+            {
+                _hasNodesLayoutInProgressBeenHit = true;
+                return;
             }
+
+            _isLayoutInProgress = true;
+            _hasNodesLayoutInProgressBeenHit = false;
+
+            RunLayout();
+
+            _isLayoutInProgress = false;
+
             UpdateEdges();
         }
+
         public void UpdateEdges()
         {
-            foreach(var item in Items)
-                if(item is Edge)
-                {
-                    var temp = item as Edge;
-                    temp.IsChildvalid = true;
-                    temp.DrawLine();
-                }
+            if (_isLayoutInProgress)
+            {
+                _hasEdgesLayoutInProgressBeenHit = true;
+                return;
+            }
+
+            _isLayoutInProgress = true;
+            _hasEdgesLayoutInProgressBeenHit = false;
+
+            foreach (var nodeItem in Items.OfType<Node>())
+            {
+                if (nodeItem.AreDependentRoutesValid)
+                    continue;
+
+                foreach (var edge in Items.OfType<Edge>())
+                    if (edge.Source == nodeItem || edge.Target == nodeItem)
+                        edge.HasValidLayout = false;
+
+                nodeItem.AreDependentRoutesValid = true;
+            }
+
+            foreach (var edge in Items.OfType<Edge>())
+            {
+                if (edge.HasValidLayout)
+                    continue;
+
+                edge.DrawLine();
+                edge.HasValidLayout = true;
+            }
+
+            _isLayoutInProgress = false;
+
+            if (_hasEdgesLayoutInProgressBeenHit)
+                UpdateEdges();
         }
 
         protected override DependencyObject GetContainerForItemOverride()

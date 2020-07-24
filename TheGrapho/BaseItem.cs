@@ -16,19 +16,23 @@ namespace TheGrapho
 {
     public class BaseItem : DependencyObject
     {
-        public static readonly DependencyProperty IsChildValidProperty = DependencyProperty.Register(
-            "IsChildValid",
-            typeof(bool),
-            typeof(BaseItem),
-            new PropertyMetadata(true));
-        public static readonly DependencyProperty YProperty = DependencyProperty.Register(
-            "Y",
-            typeof(double),
-            typeof(BaseItem));
+        public static readonly DependencyProperty HasValidLayoutProperty = DependencyProperty.Register(
+            nameof(HasValidLayout), typeof(bool),
+            typeof(BaseItem), new PropertyMetadata(false)
+        );
+
         public static readonly DependencyProperty XProperty = DependencyProperty.Register(
             "X",
             typeof(double),
-            typeof(BaseItem));
+            typeof(BaseItem),
+            new PropertyMetadata(PositionChanged));
+
+        public static readonly DependencyProperty YProperty = DependencyProperty.Register(
+            "Y",
+            typeof(double),
+            typeof(BaseItem),
+            new PropertyMetadata(PositionChanged));
+
         public static readonly DependencyProperty ZIndexProperty = DependencyProperty.Register(
             "ZIndex",
             typeof(int),
@@ -37,10 +41,10 @@ namespace TheGrapho
             "CurrentStyle",
             typeof(Style),
             typeof(BaseItem));
+
         public double X { get { return (double)GetValue(XProperty); } set { SetValue(XProperty, value); } }
         public double Y { get { return (double)GetValue(YProperty); } set { SetValue(YProperty, value); } }
         public int ZIndex { get { return (int)GetValue(ZIndexProperty); } set { SetValue(ZIndexProperty, value); } }
-        public bool IsChildvalid { get { return (bool)GetValue(IsChildValidProperty); } set { SetValue(IsChildValidProperty, value); } }
         public int? PositionOfSelection;
         public static readonly DependencyProperty StrokeProperty = DependencyProperty.Register(
             "Stroke",
@@ -65,6 +69,21 @@ namespace TheGrapho
         {
             Thickness = _Thickness;
             Stroke = _Stroke;
+        }
+
+        public bool HasValidLayout
+        {
+            get => (bool)GetValue(HasValidLayoutProperty);
+            set => SetValue(HasValidLayoutProperty, value);
+        }
+
+        protected virtual void OnPositionChanged(DependencyPropertyChangedEventArgs e)
+        {
+        }
+
+        private static void PositionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            (d as BaseItem)?.OnPositionChanged(e);
         }
     }
 }

@@ -104,9 +104,23 @@
                 <MenuItem Header="Add Edges Between Selected Nodes" Click="AddEdgesAsChain"/>
                 <MenuItem Header="Add Edges From First Selected Node" Click="AddEdgesAsGod"/>
             </MenuItem>
-            <MenuItem Header="Update Graph" Click="UpdateGraphClick"/>
             <MenuItem Header="Scale">
                 <MenuItem Name="resetScale" Header="= scale"/>
+            </MenuItem>
+            <MenuItem Header="Layout">
+                <MenuItem Header="Invalidate nodes" Click="InvalidateNodes" />
+                <MenuItem Header="Invalidate edges" Click="InvalidateEdges" />
+                <MenuItem Header="Invalidate all" Click="InvalidateAll" />
+                <Separator />
+                <MenuItem Header="Invalidate edges from nodes" Click="InvalidateRoutes" />
+                <Separator />
+                <MenuItem Header="Layout [edges-only]" Click="DoEdgeLayout" />
+                <MenuItem Header="Layout [full]" Click="DoFullLayout" />
+                <Separator />
+                <MenuItem Header="Switch to...">
+                    <MenuItem Header="Random" Click="SwitchToRandomLayout" />
+                    <MenuItem Header="Circular" Click="SwitchToCircularLayout" />
+                </MenuItem>
             </MenuItem>
         </Menu>
         <local:ZoomBorder x:Name="zoomBorder" ClipToBounds="True" Background="AliceBlue">

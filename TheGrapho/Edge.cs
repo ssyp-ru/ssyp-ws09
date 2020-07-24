@@ -37,14 +37,12 @@ namespace TheGrapho
             Source = source;
             Target = target;
             IsDirect = isDirect;
-            Path = new PathGeometry();  // TODO: Move this to method
-            DrawLine();
+            //DrawLine();
             this.ZIndex = 0;
         }
         public void DrawLine()
         {
             // TODO: Add arrows
-            Path.Clear();
             var figure = new PathFigure();
             var (start_point, end_point) = FindOptimalCords();
             figure.Segments.Add(new LineSegment(end_point, true));
@@ -78,6 +76,7 @@ namespace TheGrapho
                 figure.Segments.Add(new LineSegment(end_point, true));
             }
             Borders = new Rect(start_point, end_point);
+            Path = new PathGeometry();  // TODO: Move this to method
             Path.Figures.Add(figure);
             if (PositionOfSelection != null)
                 Select();
