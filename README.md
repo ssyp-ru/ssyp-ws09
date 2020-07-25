@@ -1,6 +1,22 @@
 # TheGrapho [RU]
 
-To Be Written.
+Данный репозиторий содержит исходный код целевого проекта мастерской №9 "Диаграммы, или отобразить неотобразимое".
+
+## Ученики
+* Завёрткин Михаил
+* Постовалов Ярослав
+* Прокопенко Всеволод
+
+## Краткое описание функционала
+* Визуализация ориентированных и неориентированных графов с использованием Windows Presentation Foundation (WPF)
+* Парсинг DOT файлов без потерь содержимого (full-fidelity)
+* Редактирование (перемещение, переименование, добавление, удаление, выделение) вершин и рёбер
+* 2 алгоритма layout'а (укладки) графов
+* Сохранение графа в DOT файл
+* Система инвалидации layout'а при изменении свойств графа
+
+## Сборка
+Для сборки достаточно .NET Core SDK версии 3.1 на поддерживаемой версии Windows, процесс разработки не имеет особенностей. Для справки ознакомьтесь с документацией по стандартным командам dotnet CLI.
 
 ## Сторонние лицензии
 Элементы из списка ниже _явно исключаются_ из условий лицензии MPL 2.0 (см. LICENSE.txt), и на них распространяются условия исходной лицензии.
@@ -11,7 +27,18 @@ To Be Written.
 
 # TheGrapho [EN]
 
-To Be Written.
+This repository contains the code and data of the final project of the 9th workshop, SSYP (LSHUP) 2020.
+
+## Terse functionality description
+* Graph and digraph visualization using Windows Presentation Foundation (WPF)
+* Full-fidelity DOT file parsing
+* Vertex and edge editor (move, rename, add, remove, select)
+* 2 graph layout algorithms
+* Saving graph to DOT file
+* Graph layout invalidation on property changes
+
+## Building
+.NET Core SDK 3.1 on Windows OS is sufficient, the development process does not require any special workarounds, so use dotnet CLI Help for reference.
 
 ## Third-Party Notices
 Items from the following list are _explicitly exempt_ from the terms of MPL 2.0 (see LICENSE.txt) and are covered by their original license.
